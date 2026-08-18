@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>지연이의 5급 한자 화이팅!</title>
+    <style>
+        body { 
+            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; 
+            text-align: center; 
+            background-color: #f0f4f8; 
+            margin: 0; 
+            padding: 20px; 
+        }
+        h1 { 
+            color: #2c3e50; 
+            font-size: 2.5em;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 25px;
+        }
+        .stage-info { 
+            font-size: 1.3em; 
+            font-weight: bold; 
+            margin-bottom: 20px; 
+            color: #e74c3c; 
+            background: #fff;
+            display: inline-block;
+            padding: 5px 20px;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 15px; 
+            max-width: 900px; 
+            margin: 0 auto; 
+        }
+        @media (max-width: 768px) { 
+            .grid { grid-template-columns: repeat(2, 1fr); } 
+        }
+        .card {
+            background: white; 
+            border-radius: 15px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            height: 140px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            flex-direction: column;
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            user-select: none; 
+            border: 2px solid transparent;
+        }
+        .card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            border-color: #3498db;
+        }
+        .card.revealed { 
+            background-color: #e8f8f5; 
+            border-color: #1abc9c;
+        }
+        .hanja { 
+            font-size: 3.5em;
+            font-weight: bold; 
+            color: #2980b9; 
+            transition: margin 0.3s;
+        }
+        .card.revealed .hanja {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .meaning-sound { 
+            font-size: 1.2em; 
+            color: #c0392b; 
+            display: none; 
+            font-weight: bold; 
+        }
+        .card.revealed .meaning-sound { 
+            display: block; 
+        }
+        .controls { 
+            margin-top: 40px; 
+        }
+        button {
+            padding: 12px 25px; 
+            font-size: 1.1em; 
+            font-weight: bold;
+            margin: 0 10px; 
+            cursor: pointer;
+            border: none; 
+            border-radius: 8px; 
+            background-color: #3498db; 
+            color: white;
+            transition: background-color 0.3s;
+        }
+        button:disabled { 
+            background-color: #bdc3c7; 
+            cursor: not-allowed; 
+        }
+        button:hover:not(:disabled) { 
+            background-color: #2980b9; 
+        }
+    </style>
+</head>
+<body>
+    <h1>지연이의 5급 한자 화이팅! 🎉</h1>
+    <div class="subtitle">카드를 클릭하면 뜻과 음이 나와요!</div>
+    <div class="stage-info" id="stageInfo">Stage 1 / 15</div>
+    <div class="grid" id="grid"></div>
+    <div class="controls">
+        <button id="prevBtn" onclick="changeStage(-1)">◀ 이전 스테이지</button>
+        <button id="nextBtn" onclick="changeStage(1)">다음 스테이지 ▶</button>
+    </div>
+
+    <script>
+        // 150개의 5급 한자 데이터 (제공된 이미지 기준)
+        const hanjaList = [
+            // 1번 이미지 (39개)
+            {h:"各", m:"각각 각"},{h:"感", m:"느낄 감"},{h:"强", m:"강할 강"},{h:"開", m:"열 개"},{h:"去", m:"갈 거"},{h:"見", m:"볼 견"},{h:"犬", m:"개 견"},{h:"京", m:"서울 경"},{h:"計", m:"셀 계"},{h:"界", m:"지경 계"},{h:"苦", m:"괴로울 고"},{h:"高", m:"높을 고"},{h:"功", m:"공 공"},
+            {h:"共", m:"함께 공"},{h:"科", m:"과목 과"},{h:"果", m:"과실 과"},{h:"光", m:"빛 광"},{h:"交", m:"사귈 교"},{h:"郡", m:"고을 군"},{h:"近", m:"가까울 근"},{h:"根", m:"뿌리 근"},{h:"急", m:"급할 급"},{h:"多", m:"많을 다"},{h:"短", m:"짧을 단"},{h:"當", m:"마땅할 당"},{h:"堂", m:"집 당"},
+            {h:"對", m:"대답할 대"},{h:"圖", m:"그림 도"},{h:"度", m:"법도 도"},{h:"刀", m:"칼 도"},{h:"讀", m:"읽을 독"},{h:"冬", m:"겨울 동"},{h:"童", m:"아이 동"},{h:"頭", m:"머리 두"},{h:"等", m:"무리 등"},{h:"樂", m:"즐거울 락"},{h:"禮", m:"예도 례"},{h:"路", m:"길 로"},{h:"綠", m:"푸를 록"},
+            // 2번 이미지 (39개)
+            {h:"神", m:"귀신 신"},{h:"身", m:"몸 신"},{h:"信", m:"믿을 신"},{h:"新", m:"새로울 신"},{h:"失", m:"잃을 실"},{h:"愛", m:"사랑 애"},{h:"野", m:"들 야"},{h:"夜", m:"밤 야"},{h:"藥", m:"약 약"},{h:"弱", m:"약할 약"},{h:"陽", m:"볕 양"},{h:"洋", m:"큰바다 양"},{h:"魚", m:"물고기 어"},
+            {h:"言", m:"말씀 언"},{h:"業", m:"일 업"},{h:"永", m:"길 영"},{h:"英", m:"꽃부리 영"},{h:"勇", m:"날쌜 용"},{h:"用", m:"쓸 용"},{h:"友", m:"벗 우"},{h:"運", m:"움직일 운"},{h:"遠", m:"멀 원"},{h:"原", m:"언덕 원"},{h:"元", m:"으뜸 원"},{h:"油", m:"기름 유"},{h:"肉", m:"고기 육"},
+            {h:"銀", m:"은 은"},{h:"飮", m:"마실 음"},{h:"音", m:"소리 음"},{h:"意", m:"뜻 의"},{h:"者", m:"놈 자"},{h:"昨", m:"어제 작"},{h:"作", m:"지을 작"},{h:"章", m:"글 장"},{h:"在", m:"있을 재"},{h:"才", m:"재주 재"},{h:"田", m:"밭 전"},{h:"題", m:"제목 제"},{h:"第", m:"차례 제"},
+            // 3번 이미지 (39개)
+            {h:"理", m:"다스릴 리"},{h:"李", m:"오얏 리"},{h:"利", m:"이로울 리"},{h:"命", m:"목숨 명"},{h:"明", m:"밝을 명"},{h:"毛", m:"털 모"},{h:"無", m:"없을 무"},{h:"聞", m:"들을 문"},{h:"米", m:"쌀 미"},{h:"美", m:"아름다울 미"},{h:"朴", m:"순박할 박"},{h:"反", m:"돌이킬 반"},{h:"半", m:"절반 반"},
+            {h:"發", m:"필 발"},{h:"放", m:"놓을 방"},{h:"番", m:"차례 번"},{h:"別", m:"다를 별"},{h:"病", m:"병 병"},{h:"步", m:"걸음 보"},{h:"服", m:"옷 복"},{h:"部", m:"거느릴 부"},{h:"死", m:"죽을 사"},{h:"書", m:"글 서"},{h:"席", m:"자리 석"},{h:"線", m:"줄 선"},{h:"省", m:"살필 성"},
+            {h:"性", m:"성품 성"},{h:"成", m:"이룰 성"},{h:"消", m:"사라질 소"},{h:"速", m:"빠를 속"},{h:"孫", m:"손자 손"},{h:"樹", m:"나무 수"},{h:"首", m:"머리 수"},{h:"習", m:"익힐 습"},{h:"勝", m:"이길 승"},{h:"詩", m:"글 시"},{h:"示", m:"보일 시"},{h:"始", m:"처음 시"},{h:"式", m:"법 식"},
+            // 4번 이미지 (33개)
+            {h:"朝", m:"아침 조"},{h:"族", m:"겨레 족"},{h:"晝", m:"낮 주"},{h:"竹", m:"대 죽"},{h:"重", m:"무거울 중"},{h:"直", m:"곧을 직"},{h:"窓", m:"창문 창"},{h:"淸", m:"맑을 청"},{h:"體", m:"몸 체"},{h:"村", m:"마을 촌"},{h:"秋", m:"가을 추"},{h:"春", m:"봄 춘"},{h:"親", m:"친할 친"},
+            {h:"太", m:"클 태"},{h:"通", m:"통할 통"},{h:"貝", m:"조개 패"},{h:"便", m:"편할 편"},{h:"表", m:"겉 표"},{h:"品", m:"물건 품"},{h:"風", m:"바람 풍"},{h:"夏", m:"여름 하"},{h:"行", m:"다닐 행"},{h:"幸", m:"다행 행"},{h:"血", m:"피 혈"},{h:"形", m:"모양 형"},{h:"號", m:"이름 호"},
+            {h:"話", m:"말씀 화"},{h:"花", m:"꽃 화"},{h:"和", m:"화할 화"},{h:"活", m:"살 활"},{h:"黃", m:"누를 황"},{h:"會", m:"모일 회"},{h:"後", m:"뒤 후"}
+        ];
+
+        let currentStage = 1;
+        const itemsPerStage = 10;
+        const totalStages = Math.ceil(hanjaList.length / itemsPerStage);
+
+        function renderStage() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            
+            // 현재 스테이지에 해당하는 데이터 계산
+            const startIdx = (currentStage - 1) * itemsPerStage;
+            const endIdx = Math.min(startIdx + itemsPerStage, hanjaList.length);
+            const currentData = hanjaList.slice(startIdx, endIdx);
+
+            // 카드 생성
+            currentData.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="hanja">${item.h}</div>
+                    <div class="meaning-sound">${item.m}</div>
+                `;
+                // 클릭 이벤트: 누르면 뜻/음이 보임
+                card.onclick = () => {
+                    card.classList.toggle('revealed');
+                };
+                grid.appendChild(card);
+            });
+
+            // 상태 업데이트
+            document.getElementById('stageInfo').innerText = `Stage ${currentStage} / ${totalStages}`;
+            document.getElementById('prevBtn').disabled = currentStage === 1;
+            document.getElementById('nextBtn').disabled = currentStage === totalStages;
+        }
+
+        function changeStage(step) {
+            currentStage += step;
+            renderStage();
+        }
+
+        // 앱 시작 시 첫 스테이지 렌더링
+        renderStage();
+    </script>
+</body>
+</html>
